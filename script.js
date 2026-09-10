@@ -271,17 +271,19 @@ let habitCalendarViews = {};
 let activeChallengeId = null;
 let restoringUiState = false;
 let uiStateTimer = null;
+let betsJumpLock = false;
+let betsJumpTimer = null;
 
 function objectArt(pact, large = false) {
   if (pact.object === "calendar") {
     return `<div class="object calendar-object ${large ? "large-object" : ""}">
-      ${["M", "T", "W", "T", "F", "S", "S"].map((d, index) => `<span class="${index < 3 ? "done" : index === 4 ? "pending" : ""}">${index < 3 ? "Stamped" : d}</span>`).join("")}
+      ${["M", "T", "W", "T", "F", "S", "S"].map((d, index) => `<span class="${index < 3 ? "done" : index === 4 ? "pending" : ""}" aria-label="${index < 3 ? "Stamped" : index === 4 ? "Due" : "Upcoming"}"><b>${d}</b><i>${index < 3 ? "\u2713" : index === 4 ? "Due" : ""}</i></span>`).join("")}
     </div>`;
   }
   if (pact.object === "prediction") {
     return `<div class="object vote-object ${large ? "large-object" : ""}">
-      <button class="picked">Yes<span>${large ? "62%" : "Hidden"}</span></button>
-      <button>No<span>${large ? "38%" : "Pick"}</span></button>
+      <span class="picked">Yes<small>${large ? "62%" : "Hidden"}</small></span>
+      <span>No<small>${large ? "38%" : "Pick"}</small></span>
     </div>`;
   }
   if (pact.object === "race") {
@@ -324,7 +326,7 @@ function memberAvatarRow(names) {
 function renderGallery() {
   const visible = pacts.filter((pact) => currentFilter === "All" || pact.context === currentFilter);
   $("#pactGallery").innerHTML = visible.map((pact) => `
-    <button class="pact-card ${pact.size}" data-pact="${pact.id}">
+    <article class="pact-card ${pact.size}" data-pact="${pact.id}" data-object="${pact.object}" role="button" tabindex="0" aria-label="${escapeHtml(pact.title)}">
       <div class="card-top">
         <span>${pact.context}</span>
         <span>${pact.status}</span>
@@ -336,9 +338,17 @@ function renderGallery() {
         <small>${pact.mood}</small>
       </div>
       <div class="avatar-row">${avatarRow(pact.people)}</div>
-    </button>
+    </article>
   `).join("");
-  $$("[data-pact]").forEach((card) => card.addEventListener("click", () => openPact(card.dataset.pact)));
+  $$("[data-pact]").forEach((card) => {
+    card.addEventListener("click", () => openPact(card.dataset.pact));
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openPact(card.dataset.pact);
+      }
+    });
+  });
 }
 
 function renderPulse() {
@@ -352,10 +362,12 @@ function renderPulse() {
 
 function renderSpaces() {
   const normalizedSearch = betsSearchTerm.trim().toLowerCase();
-  $("#spaceGrid").innerHTML = `
+  const activeJump = $("[data-bets-jump].active")?.dataset.betsJump || betSections[0].id;
+  const previousScrollTop = $("#spaceGrid")?.scrollTop || 0;
+  $("#betsToolbar").innerHTML = `
     <section class="bets-summary" aria-label="Bet summary">
-      ${betSections.map((section, index) => `
-        <button class="${index === 0 ? "active" : ""}" type="button" data-bets-jump="${section.id}">
+      ${betSections.map((section) => `
+        <button class="${section.id === activeJump ? "active" : ""}" type="button" data-bets-jump="${section.id}">
           <strong>${section.title}</strong>
           <span>${sectionCountLabel(section)}</span>
         </button>
@@ -365,6 +377,8 @@ function renderSpaces() {
       <input id="betsSearchInput" type="search" value="${escapeHtml(betsSearchTerm)}" placeholder="Search bets, members, stake..." aria-label="Search bets" />
       <button type="button" data-clear-bets-search>Clear</button>
     </div>
+  `;
+  $("#spaceGrid").innerHTML = `
     ${betSections.map((section) => `
       <section class="bets-section" id="bets-${section.id}">
         <div class="bets-section-head">
@@ -416,13 +430,27 @@ function renderSpaces() {
     openChallenge(button.dataset.viewChallenge);
   }));
   $$("[data-bets-jump]").forEach((button) => button.addEventListener("click", () => {
-    $$("[data-bets-jump]").forEach((item) => item.classList.toggle("active", item === button));
-    const target = $(`#bets-${button.dataset.betsJump}`);
-    const scroller = $("#spaceGrid");
-    if (target && scroller) {
-      scroller.scrollTo({ top: target.offsetTop - scroller.offsetTop - 88, behavior: "smooth" });
-    }
+    jumpToBetsSection(button.dataset.betsJump);
   }));
+  if (previousScrollTop) $("#spaceGrid").scrollTop = previousScrollTop;
+}
+
+function betsSectionOffset(target, scroller) {
+  return target.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+}
+
+function syncBetsSummary() {
+  const scroller = $("#spaceGrid");
+  if (!scroller || betsJumpLock) return;
+  const sections = $$(".bets-section");
+  if (!sections.length) return;
+  const threshold = scroller.scrollTop + 32;
+  let current = sections[0];
+  sections.forEach((section) => {
+    if (betsSectionOffset(section, scroller) <= threshold) current = section;
+  });
+  const id = current.id.replace("bets-", "");
+  $$("[data-bets-jump]").forEach((item) => item.classList.toggle("active", item.dataset.betsJump === id));
 }
 
 function sectionCountLabel(section) {
@@ -1107,12 +1135,16 @@ function applyCompletedBetProgress(bet) {
 
 function jumpToBetsSection(sectionId) {
   requestAnimationFrame(() => {
-    const button = $(`[data-bets-jump="${sectionId}"]`);
     const target = $(`#bets-${sectionId}`);
     const scroller = $("#spaceGrid");
     if (!target || !scroller) return;
-    $$("[data-bets-jump]").forEach((item) => item.classList.toggle("active", item === button));
-    scroller.scrollTo({ top: target.offsetTop - scroller.offsetTop - 88, behavior: "smooth" });
+    $$("[data-bets-jump]").forEach((item) => item.classList.toggle("active", item.dataset.betsJump === sectionId));
+    betsJumpLock = true;
+    window.clearTimeout(betsJumpTimer);
+    betsJumpTimer = window.setTimeout(() => {
+      betsJumpLock = false;
+    }, 700);
+    scroller.scrollTo({ top: Math.max(0, betsSectionOffset(target, scroller) - 4), behavior: "smooth" });
   });
 }
 
@@ -1852,6 +1884,29 @@ function drawSingleLineText(ctx, text, x, y, maxWidth, startSize, minSize) {
   ctx.fillText(text, x, y);
 }
 
+function scrollRoot() {
+  const main = $("main");
+  if (!main) return null;
+  return getComputedStyle(main).overflowY === "auto" ? main : null;
+}
+
+function currentScrollTop() {
+  const root = scrollRoot();
+  return root ? root.scrollTop : window.scrollY;
+}
+
+function scrollRootTo(top, behavior = "smooth") {
+  const root = scrollRoot();
+  if (root) root.scrollTo({ top, behavior });
+  else window.scrollTo({ top, behavior });
+}
+
+function scrollProgress() {
+  const root = scrollRoot();
+  const max = root ? root.scrollHeight - root.clientHeight : document.documentElement.scrollHeight - window.innerHeight;
+  return Math.min(1, Math.max(0, currentScrollTop() / Math.max(1, max)));
+}
+
 function showView(view, options = {}) {
   $$(".view").forEach((section) => section.classList.toggle("active", section.id === view));
   $$("[data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
@@ -1859,17 +1914,19 @@ function showView(view, options = {}) {
   document.body.classList.toggle("bets-mode", view === "spaces");
   document.body.dataset.scene = view;
   if (view !== "challenge") activeChallengeId = null;
-  if (options.resetScroll !== false) window.scrollTo({ top: 0, behavior: "smooth" });
+  if (options.resetScroll !== false) scrollRootTo(0);
   rememberUiState();
 }
 
 function initDepthScene() {
   const canvas = document.querySelector("#pact3d");
   if (!canvas || !window.THREE) return;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  if ("outputColorSpace" in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
+  else if (THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(31, 1, 0.1, 100);
@@ -1877,63 +1934,76 @@ function initDepthScene() {
 
   const world = new THREE.Group();
   scene.add(world);
-  const warmLight = new THREE.PointLight(0xffd79e, 16, 30);
-  warmLight.position.set(-4, 5, 8);
+  scene.add(new THREE.HemisphereLight(0xdfe6ff, 0x1a1408, 0.42));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+  const keyLight = new THREE.DirectionalLight(0xfff1dc, 0.7);
+  keyLight.position.set(-6, 7, 9);
+  scene.add(keyLight);
+  const warmLight = new THREE.PointLight(0xffc98a, 0.75, 40, 1);
+  warmLight.position.set(-5, 3.5, 6);
   scene.add(warmLight);
-  const coolLight = new THREE.PointLight(0x5d7cff, 12, 26);
-  coolLight.position.set(5, -1, 6);
+  const coolLight = new THREE.PointLight(0x5d7cff, 0.65, 36, 1);
+  coolLight.position.set(3, -3, 5);
   scene.add(coolLight);
-  scene.add(new THREE.AmbientLight(0xffffff, 1.6));
 
   const physical = new THREE.Group();
   world.add(physical);
-  const shellMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0xeaf0ff,
+  const glassMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xe6edff,
     transparent: true,
-    opacity: 0.36,
-    roughness: 0.1,
-    metalness: 0.04,
-    transmission: 0.15,
-    thickness: 0.7,
+    opacity: 0.34,
+    roughness: 0.12,
+    metalness: 0.05,
+    transmission: 0.2,
+    thickness: 0.6,
   });
-  const coinMaterial = new THREE.MeshStandardMaterial({ color: 0xffbf28, roughness: 0.28, metalness: 0.72 });
-  const inkMaterial = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.48, metalness: 0.14 });
-  const blueMaterial = new THREE.MeshStandardMaterial({ color: 0x426cff, roughness: 0.3, metalness: 0.12 });
-  const paperMaterial = new THREE.MeshStandardMaterial({ color: 0xfff8e8, roughness: 0.7 });
+  const coinMaterial = new THREE.MeshStandardMaterial({ color: 0xf5b52a, roughness: 0.3, metalness: 0.75 });
+  const inkMaterial = new THREE.MeshStandardMaterial({ color: 0x151a26, roughness: 0.5, metalness: 0.15 });
+  const blueMaterial = new THREE.MeshStandardMaterial({ color: 0x3f68ff, roughness: 0.32, metalness: 0.15 });
+  const paperMaterial = new THREE.MeshStandardMaterial({ color: 0xf6f1e6, roughness: 0.85 });
 
+  // Stake jar with coins: bottom-left of the stage.
   const jar = new THREE.Group();
-  jar.position.set(2.9, -0.2, -1.3);
-  const jarBody = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.3, 2.4, 42, 1, true), shellMaterial);
-  const jarBase = new THREE.Mesh(new THREE.CylinderGeometry(1.28, 1.28, 0.08, 42), shellMaterial);
-  jarBase.position.y = -1.2;
-  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.94, 0.28, 32), inkMaterial);
-  lid.position.y = 1.32;
+  jar.position.set(-3.3, -1.7, -0.8);
+  jar.rotation.z = 0.06;
+  const jarBody = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.2, 2.3, 42, 1, true), glassMaterial);
+  const jarBase = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.18, 0.08, 42), glassMaterial);
+  jarBase.position.y = -1.15;
+  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.88, 0.26, 32), inkMaterial);
+  lid.position.y = 1.26;
   jar.add(jarBody, jarBase, lid);
   for (let index = 0; index < 13; index += 1) {
     const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.07, 24), coinMaterial);
     const angle = index * 2.33;
-    const radius = 0.18 + (index % 4) * 0.22;
-    coin.position.set(Math.cos(angle) * radius, -0.88 + (index % 3) * 0.19, Math.sin(angle) * radius);
+    const radius = 0.16 + (index % 4) * 0.2;
+    coin.position.set(Math.cos(angle) * radius, -0.86 + (index % 3) * 0.19, Math.sin(angle) * radius);
     coin.rotation.set(Math.PI / 2.2, index * 0.65, index * 0.18);
     jar.add(coin);
   }
   physical.add(jar);
 
+  // Proof polaroid with a stamp: mid-left, closest to the phone.
   const proof = new THREE.Group();
-  proof.position.set(-3.1, 1.6, -2.5);
-  proof.rotation.set(-0.16, 0.45, -0.16);
-  const photo = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.55, 0.12), paperMaterial);
-  const photoFrame = new THREE.Mesh(new THREE.BoxGeometry(1.72, 1.5, 0.14), new THREE.MeshStandardMaterial({ color: 0xc7d7ff, roughness: 0.55 }));
-  photoFrame.position.z = 0.09;
-  photoFrame.position.y = 0.19;
-  const proofTape = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.16, 0.16), new THREE.MeshStandardMaterial({ color: 0xffc9dc, roughness: 0.45 }));
-  proofTape.position.set(0, 1.25, 0.12);
-  proof.add(photo, photoFrame, proofTape);
+  proof.position.set(-1.35, 1.35, -1.4);
+  proof.rotation.set(-0.12, -0.3, 0.1);
+  const photo = new THREE.Mesh(new THREE.BoxGeometry(2.1, 2.45, 0.1), paperMaterial);
+  const photoFrame = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.5, 0.12), new THREE.MeshStandardMaterial({ color: 0x4a5f9e, roughness: 0.7 }));
+  photoFrame.position.set(0, 0.28, 0.06);
+  const photoMoon = new THREE.Mesh(new THREE.CircleGeometry(0.26, 32), new THREE.MeshStandardMaterial({ color: 0xffe9b8, roughness: 0.5, emissive: 0xffd27a, emissiveIntensity: 0.35 }));
+  photoMoon.position.set(0.45, 0.62, 0.125);
+  const proofTape = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.18, 0.06), new THREE.MeshStandardMaterial({ color: 0xffc9dc, roughness: 0.5, transparent: true, opacity: 0.9 }));
+  proofTape.position.set(0.05, 1.18, 0.1);
+  proofTape.rotation.z = 0.12;
+  const stamp = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.04, 32), new THREE.MeshStandardMaterial({ color: 0xffb800, roughness: 0.55 }));
+  stamp.rotation.x = Math.PI / 2;
+  stamp.position.set(0.6, -0.85, 0.09);
+  proof.add(photo, photoFrame, photoMoon, proofTape, stamp);
   physical.add(proof);
 
+  // Pin board: top-left, furthest back.
   const board = new THREE.Group();
-  board.position.set(2.7, 3.3, -4);
-  board.rotation.set(0.18, -0.42, 0.12);
+  board.position.set(-3.7, 2.5, -3.6);
+  board.rotation.set(0.14, 0.38, -0.05);
   const boardBody = new THREE.Mesh(new THREE.BoxGeometry(3.8, 2.35, 0.24), new THREE.MeshStandardMaterial({ color: 0xb87149, roughness: 0.8 }));
   board.add(boardBody);
   [
@@ -1948,10 +2018,21 @@ function initDepthScene() {
   });
   physical.add(board);
 
+  // Prediction ring: lower-middle, half tucked behind the phone.
   const ring = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.12, 18, 56), blueMaterial);
-  ring.position.set(-3.3, -2.2, -3);
-  ring.rotation.x = 0.75;
+  ring.position.set(-1, -2.5, -2.8);
+  ring.rotation.x = 0.8;
   physical.add(ring);
+
+  // A few loose coins for depth.
+  const looseCoins = new THREE.Group();
+  [[-0.4, -0.6, -0.4], [-2.2, 0.15, -1.1], [-0.2, 2.7, -3]].forEach(([x, y, z], index) => {
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.06, 24), coinMaterial);
+    coin.position.set(x, y, z);
+    coin.rotation.set(1.1 + index * 0.3, index * 0.7, 0.4);
+    looseCoins.add(coin);
+  });
+  physical.add(looseCoins);
 
   const pointer = { x: 0, y: 0 };
   window.addEventListener("pointermove", (event) => {
@@ -1959,31 +2040,44 @@ function initDepthScene() {
     pointer.y = (event.clientY / window.innerHeight - 0.5) * 2;
   }, { passive: true });
 
+  let needsFrame = true;
   function resize() {
     const width = window.innerWidth;
     const height = window.innerHeight;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+    needsFrame = true;
   }
   resize();
   window.addEventListener("resize", resize, { passive: true });
 
+  // The stage is fully covered by the app shell below 500px, so skip work there.
+  function shouldAnimate() {
+    return !document.hidden && window.innerWidth >= 500 && !reducedMotion.matches;
+  }
+
   function render(time) {
-    const scroll = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    requestAnimationFrame(render);
+    if (!shouldAnimate() && !needsFrame) return;
+    needsFrame = false;
+    const scroll = scrollProgress();
     const sceneName = document.body.dataset.scene || "home";
     const challengeBoost = sceneName === "challenge" ? 1 : sceneName === "spaces" ? 0.55 : 0;
     world.rotation.y += (pointer.x * 0.14 - world.rotation.y) * 0.025;
     world.rotation.x += (-pointer.y * 0.08 - world.rotation.x) * 0.025;
     physical.position.y = Math.sin(time * 0.0006) * 0.12 - scroll * 1.35;
     jar.rotation.y = time * 0.0002 + scroll * 1.1;
-    jar.rotation.z = Math.sin(time * 0.0007) * 0.08;
-    proof.rotation.z = -0.16 + Math.sin(time * 0.00085) * 0.08;
-    board.rotation.y = -0.42 + Math.sin(time * 0.00045) * 0.08;
+    jar.rotation.z = 0.06 + Math.sin(time * 0.0007) * 0.06;
+    proof.rotation.z = 0.1 + Math.sin(time * 0.00085) * 0.08;
+    board.rotation.y = 0.38 + Math.sin(time * 0.00045) * 0.08;
     ring.rotation.z = time * 0.00055;
+    looseCoins.children.forEach((coin, index) => {
+      coin.rotation.y = time * 0.0004 + index;
+      coin.position.y += Math.sin(time * 0.0009 + index * 2) * 0.0015;
+    });
     physical.scale.setScalar(0.9 + challengeBoost * 0.18);
     renderer.render(scene, camera);
-    requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
 }
@@ -2005,13 +2099,13 @@ function rememberUiState(immediate = false) {
       sessionStorage.setItem(UI_STATE_KEY, JSON.stringify({
         view: activeViewId(),
         challengeId: activeChallengeId,
-        scrollY: window.scrollY,
+        scrollY: currentScrollTop(),
         spacesScrollTop: $("#spaceGrid")?.scrollTop || 0,
       }));
       localStorage.setItem(UI_STATE_KEY, JSON.stringify({
         view: activeViewId(),
         challengeId: activeChallengeId,
-        scrollY: window.scrollY,
+        scrollY: currentScrollTop(),
         spacesScrollTop: $("#spaceGrid")?.scrollTop || 0,
       }));
     } catch {
@@ -2047,7 +2141,7 @@ function restoreUiState() {
   requestAnimationFrame(() => {
     const spaces = $("#spaceGrid");
     if (spaces && Number.isFinite(Number(state.spacesScrollTop))) spaces.scrollTop = Number(state.spacesScrollTop);
-    window.scrollTo({ top: Number(state.scrollY) || 0, behavior: "auto" });
+    scrollRootTo(Number(state.scrollY) || 0, "auto");
     restoringUiState = false;
     rememberUiState();
   });
@@ -2312,10 +2406,19 @@ function init() {
   });
   window.addEventListener("hashchange", showViewFromHash);
   window.addEventListener("scroll", rememberUiState, { passive: true });
-  $("#spaceGrid")?.addEventListener("scroll", rememberUiState, { passive: true });
+  $("main")?.addEventListener("scroll", rememberUiState, { passive: true });
+  $("#spaceGrid")?.addEventListener("scroll", () => {
+    rememberUiState();
+    syncBetsSummary();
+  }, { passive: true });
   window.addEventListener("beforeunload", () => rememberUiState(true));
   restoreUiState();
 }
 
-initDepthScene();
 init();
+try {
+  initDepthScene();
+} catch (error) {
+  console.warn("Pact 3D stage unavailable, continuing without it.", error);
+  document.body.classList.add("no-stage");
+}
