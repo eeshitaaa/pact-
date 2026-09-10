@@ -74,6 +74,38 @@ body.bets-mode {
   overflow: hidden;
 }
 
+.bets-mode main {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+.bets-mode #spaces.active {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.bets-toolbar {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 14px;
+}
+
+.bets-mode .space-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 6px;
+  padding-bottom: 116px;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
 button,
 textarea {
   font: inherit;
@@ -425,6 +457,24 @@ p {
   color: white;
 }
 
+.reaction-row button,
+.drawer-actions button,
+.activity-item button {
+  background: #f3f3f3;
+}
+
+.drawer-actions button:first-child {
+  background: var(--ink);
+  color: white;
+}
+
+#publishPact {
+  flex-basis: 100%;
+  min-height: 54px;
+  margin-top: 4px;
+  border-radius: 20px;
+}
+
 .gallery-head,
 .pulse-header {
   display: flex;
@@ -435,15 +485,26 @@ p {
   margin-bottom: 14px;
 }
 
+.gallery-head {
+  flex-wrap: wrap;
+  row-gap: 12px;
+}
+
 .gallery-head h2 {
   margin-bottom: 0;
 }
 
 .filters {
   display: flex;
+  flex-basis: 100%;
   gap: 7px;
-  max-width: 170px;
   overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
 }
 
 .filters button,
@@ -459,10 +520,17 @@ p {
   white-space: nowrap;
 }
 
+.suggestions button,
+.create-options button {
+  background: white;
+  box-shadow: 0 6px 14px rgba(3, 3, 3, 0.04);
+}
+
 .filters button.active,
 .create-options button.active {
   background: var(--ink);
   color: white;
+  box-shadow: none;
 }
 
 .pact-gallery {
@@ -473,41 +541,39 @@ p {
 .pact-card {
   position: relative;
   width: 100%;
+  margin: 0;
   padding: 18px;
   text-align: left;
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.pact-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-}
-
-.pact-card.feature {
-  background: #f2f5ff;
-}
-
-.pact-card:nth-child(2) {
-  background: #fff4e9;
-}
-
-.pact-card:nth-child(3) {
-  background: #effaf5;
-}
-
-.pact-card:nth-child(4) {
+.pact-card[data-object="calendar"] {
   background: #fff0f6;
 }
 
-.pact-card:nth-child(5) {
+.pact-card[data-object="calendar"].feature {
+  background: #f2f5ff;
+}
+
+.pact-card[data-object="prediction"] {
+  background: #fff4e9;
+}
+
+.pact-card[data-object="race"] {
+  background: #effaf5;
+}
+
+.pact-card[data-object="number"] {
   background: #f0f4ff;
 }
 
-.pact-card:nth-child(6) {
+.pact-card[data-object="jar"] {
   background: #fff8df;
 }
 
-.pact-card:nth-child(7) {
+.pact-card[data-object="elimination"] {
   background: #f0fbff;
 }
 
@@ -565,13 +631,29 @@ p {
 
 .calendar-object span {
   display: grid;
-  place-items: center;
+  align-content: center;
+  justify-items: center;
+  gap: 5px;
   min-height: 54px;
   border-radius: 18px;
-  background: #ffffff;
+  background: #f3f4f8;
   color: var(--soft);
-  font-size: 0.62rem;
   font-weight: 900;
+}
+
+.calendar-object span b {
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.calendar-object span i {
+  min-height: 1em;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .calendar-object .done {
@@ -579,9 +661,30 @@ p {
   color: #1f6749;
 }
 
+.calendar-object .done i {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #29c283;
+  color: white;
+  font-size: 0.66rem;
+}
+
 .calendar-object .pending {
   background: #ffe2d8;
   color: var(--orange);
+}
+
+.large-object.calendar-object span b {
+  font-size: 1rem;
+}
+
+.large-object.calendar-object .done i {
+  width: 22px;
+  height: 22px;
+  font-size: 0.8rem;
 }
 
 .vote-object {
@@ -591,14 +694,18 @@ p {
   padding: 10px;
 }
 
-.vote-object button {
+.vote-object > span {
+  display: grid;
+  place-content: center;
   border-radius: 24px;
-  background: #ffffff;
+  background: #f3f4f8;
+  color: var(--ink);
   font-size: 1.6rem;
   font-weight: 950;
+  text-align: center;
 }
 
-.vote-object button span {
+.vote-object > span small {
   display: block;
   margin-top: 7px;
   color: var(--muted);
@@ -606,7 +713,8 @@ p {
 }
 
 .vote-object .picked {
-  background: linear-gradient(135deg, var(--lavender), #f7f8ff);
+  background: linear-gradient(135deg, var(--lavender), #eef1ff);
+  box-shadow: inset 0 0 0 2px rgba(51, 99, 255, 0.16);
 }
 
 .race-object {
@@ -620,7 +728,7 @@ p {
   position: relative;
   height: 26px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
+  background: #eef0f5;
 }
 
 .race-object span {
@@ -665,9 +773,10 @@ p {
   width: 50px;
   height: 68px;
   border-radius: 18px;
-  background: #ffffff;
+  background: #f3f4f8;
   color: var(--ink);
   font-weight: 950;
+  box-shadow: 0 8px 18px rgba(3, 3, 3, 0.06);
   transform: rotate(var(--tilt));
 }
 
@@ -693,7 +802,8 @@ p {
   width: 76px;
   height: 118px;
   border-radius: 24px;
-  background: #ffffff;
+  background: #f3f4f8;
+  box-shadow: inset 0 0 0 2px rgba(3, 3, 3, 0.05);
   overflow: hidden;
 }
 
@@ -724,8 +834,9 @@ p {
 .passes-object span {
   padding: 13px 14px;
   border-radius: 18px;
-  background: #ffffff;
+  background: #f3f4f8;
   font-weight: 950;
+  box-shadow: 0 6px 14px rgba(3, 3, 3, 0.05);
   transform: rotate(-2deg);
 }
 
@@ -798,11 +909,10 @@ p {
 .bets-page-head h1 {
   margin: 0;
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
-  font-size: 1.9rem;
-  font-weight: 750;
+  font-size: 2rem;
+  font-weight: 950;
   letter-spacing: 0;
-  line-height: 1.05;
+  line-height: 1;
 }
 
 .bets-search {
@@ -844,13 +954,6 @@ p {
   gap: 18px;
 }
 
-.bets-mode .space-grid {
-  max-height: calc(100vh - 198px);
-  overflow-y: auto;
-  padding-bottom: 108px;
-  scroll-behavior: smooth;
-}
-
 .bets-mode .space-grid::-webkit-scrollbar {
   display: none;
 }
@@ -865,13 +968,9 @@ p {
 }
 
 .bets-summary {
-  position: sticky;
-  top: 0;
-  z-index: 5;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0;
-  margin-bottom: 16px;
   padding: 8px;
   border-radius: 28px;
   background: #f7f7f7;
@@ -909,8 +1008,6 @@ p {
   display: none;
   grid-template-columns: 1fr auto;
   gap: 8px;
-  margin-top: -6px;
-  margin-bottom: 6px;
   padding: 8px;
   border-radius: 24px;
   background: #f7f7f7;
@@ -942,7 +1039,7 @@ p {
 
 .bets-section {
   margin-top: 28px;
-  scroll-margin-top: 96px;
+  scroll-margin-top: 0;
 }
 
 .bets-section:first-of-type {
@@ -2692,6 +2789,18 @@ p {
   background: #f7f7f7;
 }
 
+.challenge-detail-grid article:last-child:nth-child(odd) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  grid-column: 1 / -1;
+  min-height: 0;
+}
+
+.challenge-detail-grid article:last-child:nth-child(odd) strong {
+  margin-top: 0;
+}
+
 .challenge-detail-grid span {
   display: block;
   color: var(--soft);
@@ -2785,6 +2894,12 @@ textarea {
   align-items: center;
   padding: 18px;
   border: 0;
+  background: white;
+  box-shadow: 0 14px 30px rgba(16, 24, 40, 0.06);
+}
+
+.activity-item > span {
+  background: #f3f3f3;
 }
 
 .activity-item.handled {
@@ -2801,11 +2916,10 @@ textarea {
 .profile-top h1 {
   margin: 0;
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
-  font-size: 1.9rem;
-  font-weight: 750;
+  font-size: 2rem;
+  font-weight: 950;
   letter-spacing: 0;
-  line-height: 1.05;
+  line-height: 1;
 }
 
 .settings-button {
@@ -3846,9 +3960,8 @@ textarea {
 .settings-panel h2 {
   margin: 0 0 6px;
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
   font-size: 1.72rem;
-  font-weight: 760;
+  font-weight: 950;
 }
 
 .settings-option {
@@ -4096,6 +4209,10 @@ textarea {
     overflow: hidden;
   }
 
+  .bets-mode main {
+    height: calc(100vh - 36px);
+  }
+
   .topbar {
     top: 18px;
     border-radius: 32px 32px 0 0;
@@ -4104,5 +4221,102 @@ textarea {
   .mobile-nav {
     bottom: 0;
     border-radius: 0;
+  }
+}
+
+/* Desktop: the app lives inside a fixed phone frame beside the 3D stage.
+   The frame's transform would trap fixed children, so the nav is anchored
+   to the frame and the content scrolls inside <main>. */
+@media (min-width: 820px) {
+  body {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .shell {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 92px);
+    min-height: 0;
+  }
+
+  main {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+  }
+
+  main::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bets-mode main {
+    height: auto;
+  }
+
+  .mobile-nav {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    transform: none;
+    border-radius: 0;
+  }
+
+  .toast {
+    left: auto;
+    right: calc(clamp(36px, 17vw, 280px) + 16px);
+    width: min(100% - 88px, 428px);
+    bottom: 140px;
+    transform: none;
+  }
+
+  .drawer.open {
+    justify-items: end;
+    padding-right: clamp(36px, 17vw, 280px);
+    padding-bottom: 46px;
+  }
+
+  .drawer-card {
+    width: min(100%, 460px);
+    border-radius: 34px;
+  }
+
+  .stat-sheet.open {
+    justify-content: end;
+    padding-right: clamp(36px, 17vw, 280px);
+    padding-bottom: 46px;
+  }
+
+  .stat-sheet-panel {
+    width: min(100%, 460px);
+    border-radius: 30px;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid rgba(51, 99, 255, 0.55);
+  outline-offset: 3px;
+}
+
+.no-stage #pact3d {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

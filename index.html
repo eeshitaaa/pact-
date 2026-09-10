@@ -1,245 +1,28 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pact</title>
-    <meta name="description" content="A private game room for predictions, promises and friendly accountability." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@700;800;900;1000&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=three-dimensional-scroll-v2" />
-  </head>
-  <body>
-    <div class="depth-stage" aria-hidden="true">
-      <canvas id="pact3d"></canvas>
-      <div class="depth-stage-glow"></div>
-    </div>
-    <div class="shell">
-      <nav class="topbar" aria-label="Primary">
-        <button class="wordmark active" data-view="home">Feed</button>
-        <div class="top-actions">
-          <button data-view="spaces">Bets</button>
-          <button data-view="activity">Chat</button>
-          <button data-view="profile">Me</button>
-        </div>
-      </nav>
-
-      <main>
-        <section class="view active" id="home">
-          <header class="home-intro">
-            <p class="kicker">Pact</p>
-            <h1>Bet on better habits.</h1>
-            <p>
-              Make a prediction, promise something, invite the people involved, and let Pact turn it into a small interactive object.
-            </p>
-            <button class="compose-trigger" data-view="create">What are we betting on?</button>
-          </header>
-
-          <section class="spotlight">
-            <div class="spotlight-copy">
-              <p class="kicker">Needs you</p>
-              <h2 id="spotlightTitle">Verify Naina's proof</h2>
-              <p id="spotlightText">She checked in for the sleep pact. Decide whether the photo is enough before it rolls into the weekly recap.</p>
-            </div>
-            <div class="spotlight-card proof-polaroid" id="spotlightObject">
-              <span>11:42 PM</span>
-              <strong>Lights out</strong>
-              <em>Pending stamp</em>
-            </div>
-            <div class="spotlight-actions">
-              <button data-spotlight="approve">Approve</button>
-              <button data-spotlight="more">Ask for more</button>
-            </div>
-          </section>
-
-          <section class="gallery-head">
-            <div>
-              <p class="kicker">Happening now</p>
-              <h2>Active bets</h2>
-            </div>
-            <div class="filters" aria-label="Filter pacts">
-              <button class="active" data-filter="All">All</button>
-              <button data-filter="Personal">Personal</button>
-              <button data-filter="Couple">Couple</button>
-              <button data-filter="Group">Group</button>
-            </div>
-          </section>
-
-          <section class="pact-gallery" id="pactGallery"></section>
-
-          <section class="pulse">
-            <div class="pulse-header">
-              <p class="kicker">Room pulse</p>
-              <button data-view="activity">View all</button>
-            </div>
-            <div id="pulseList"></div>
-          </section>
-        </section>
-
-        <section class="view" id="spaces">
-          <header class="bets-page-head">
-            <h1>Bets</h1>
-            <button class="bets-search" type="button" aria-label="Search bets"></button>
-          </header>
-          <div class="space-grid" id="spaceGrid"></div>
-        </section>
-
-        <section class="view challenge-view" id="challenge">
-          <header class="settings-page-top challenge-page-top">
-            <button class="settings-page-back" type="button" data-challenge-return aria-label="Back">←</button>
-            <h1>Challenge</h1>
-          </header>
-          <div id="challengeScreen"></div>
-        </section>
-
-        <section class="view" id="create">
-          <header class="page-head">
-            <p class="kicker">New Pact</p>
-            <h1>Start with the sentence.</h1>
-            <p>Pact recommends the object after you describe what should happen.</p>
-          </header>
-          <section class="create-panel">
-            <div class="compose-box">
-              <label for="ideaInput">What are we betting on?</label>
-              <textarea id="ideaInput">Can I stay off food delivery this week?</textarea>
-              <div class="suggestions">
-                <button data-suggestion="Will everyone submit the deck before Friday?">Prediction</button>
-                <button data-suggestion="Can I stay off food delivery this week?">Habit</button>
-                <button data-suggestion="Who logs the most runs this month?">Race</button>
-                <button data-suggestion="Rs 50 when someone says circle back">Jar</button>
-              </div>
-            </div>
-            <div class="recommendation">
-              <p class="kicker">Recommended object</p>
-              <h2 id="recommendTitle">Habit calendar</h2>
-              <p id="recommendText">Daily tiles with honor check-ins, optional proof and a visible streak.</p>
-              <div id="recommendPreview"></div>
-            </div>
-            <div class="create-options">
-              <button class="active" data-context="Personal">Personal</button>
-              <button data-context="Couple">Couple</button>
-              <button data-context="Group">Group</button>
-            </div>
-            <div class="create-date-settings" aria-label="Bet dates">
-              <label for="betStartInput">Starts <input id="betStartInput" type="date" /></label>
-              <label for="betDurationInput">Length
-                <select id="betDurationInput">
-                  <option value="5">5 days</option>
-                  <option value="7">Week</option>
-                  <option value="14">2 weeks</option>
-                  <option value="30">Month</option>
-                </select>
-              </label>
-            </div>
-            <div class="create-date-settings" aria-label="Proof setting">
-              <label for="betProofModeInput">Check-in
-                <select id="betProofModeInput">
-                  <option value="log">Normal log</option>
-                  <option value="proof">Photo proof</option>
-                </select>
-              </label>
-            </div>
-            <div class="publish-row">
-              <span>Calendar: proof or log</span>
-              <span>Consequence: just for fun</span>
-              <button id="publishPact">Create pact</button>
-            </div>
-          </section>
-        </section>
-
-        <section class="view" id="activity">
-          <header class="page-head">
-            <p class="kicker">Chat</p>
-            <h1>Pending and recent.</h1>
-          </header>
-          <div class="activity-list" id="activityList"></div>
-        </section>
-
-        <section class="view" id="profile">
-          <header class="profile-top">
-            <h1>Profile</h1>
-            <button class="settings-button" aria-label="Settings">⚙</button>
-          </header>
-          <header class="profile-card" id="profileCard" tabindex="0" aria-label="Flip profile card">
-            <div class="profile-card-inner">
-              <div class="profile-face profile-front">
-                <div class="profile-shape shape-one"></div>
-                <div class="profile-shape shape-two"></div>
-                <div class="big-avatar">
-                  <img src="" alt="" />
-                  <span>EA</span>
-                </div>
-                <h2>Eeshita Anand</h2>
-                <p class="profile-streak"><span aria-hidden="true">🔥</span> 12 day streak</p>
-              </div>
-              <div class="profile-face profile-back">
-                <div class="back-share-card" id="shareCard">
-                  <div class="profile-shape shape-one"></div>
-                  <div class="profile-shape shape-two"></div>
-                  <h2>Eeshita Anand</h2>
-                  <div class="back-stats" id="backStats"></div>
-                  <small>Pact</small>
-                </div>
-                <div class="card-tools" aria-label="Profile card actions">
-                  <button id="customizeCard" type="button">Customize</button>
-                  <button id="downloadCard" type="button">Download</button>
-                </div>
-              </div>
-            </div>
-          </header>
-          <p class="stats-title">Personal stats</p>
-          <div class="stat-grid personal-stat-grid">
-            <article><span>Bets won</span><strong class="blue">42</strong></article>
-            <article><span>Bets lost</span><strong class="red">14</strong></article>
-            <article><span>Best streak</span><strong class="black">18d</strong></article>
-            <article><span>Accuracy</span><strong class="yellow">75%</strong></article>
-          </div>
-
-          <section class="achievements-section" aria-label="Achievements">
-            <div class="section-row">
-              <p class="stats-title">Achievements</p>
-              <button type="button">All</button>
-            </div>
-            <div class="achievement-row" id="achievementRow"></div>
-          </section>
-        </section>
-
-        <section class="view settings-view" id="settings">
-          <header class="settings-page-top">
-            <button class="settings-page-back" type="button" data-settings-return aria-label="Back">←</button>
-            <h1>Settings</h1>
-          </header>
-          <div id="settingsScreen"></div>
-        </section>
-      </main>
-
-      <nav class="mobile-nav" aria-label="Primary">
-        <button class="active" data-view="home"><span class="nav-icon grid-icon"></span>Feed</button>
-        <button data-view="spaces"><span class="nav-icon star-icon"></span>Bets</button>
-        <button class="new-button" data-view="create">Create</button>
-        <button data-view="activity"><span class="nav-icon chat-icon"></span>Chat</button>
-        <button data-view="profile"><span class="nav-icon user-icon"></span>Me</button>
-      </nav>
-    </div>
-
-    <div class="drawer" id="drawer" aria-hidden="true">
-      <article class="drawer-card" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
-        <button class="close" id="closeDrawer" aria-label="Close">Close</button>
-        <div id="drawerObject"></div>
-        <div class="drawer-copy" id="drawerCopy"></div>
-      </article>
-    </div>
-
-    <div class="stat-sheet" id="statSheet" aria-hidden="true">
-      <div class="stat-sheet-panel" role="dialog" aria-label="Choose stat or achievement">
-        <div class="sheet-handle"></div>
-        <div class="stat-options" id="statOptions"></div>
-      </div>
-    </div>
-
-    <div class="toast" id="toast" role="status"></div>
-    <script src="assets/three.min.js"></script>
-    <script src="script.js"></script>
-  </body>
-</html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#120e0f"><meta name="description" content="A private game room for small promises, friendly stakes, and better company."><title>Pact — Your word. Made real.</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet"><link rel="stylesheet" href="room.css?v=20260910-fluid-2">
+<script defer src="assets/three.min.js"></script><script defer src="model.js?v=20260910-fluid-2"></script><script defer src="room.js?v=20260910-fluid-2"></script><script defer src="scene.js?v=20260910-fluid-2"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><a class="wordmark" href="#home" aria-label="Pact home">Pact<span class="wordmark-dot">®</span></a><nav class="desktop-nav" aria-label="Primary"><a href="#home" data-nav="home">The room</a><a href="#spaces" data-nav="spaces">Your pacts</a><a href="#activity" data-nav="activity">Activity<span class="notification-dot"></span></a><a href="#profile" data-nav="profile">Your card</a></nav><div class="header-actions"><a href="#create" class="button small primary">Make a pact <span aria-hidden="true">↗</span></a><a href="#profile" class="header-avatar" aria-label="Your profile">EA</a></div></header>
+<main id="main">
+<section id="home" class="view active" aria-label="The room">
+<div class="room-hero"><div class="hero-copy"><p class="eyebrow"><span class="live-dot"></span> Small promises. Better company.</p><h1>Your word.<br><em>Made real.</em></h1><p class="hero-description">A little friendly pressure.<br>A more interesting you.</p><div class="hero-actions"><a class="button primary" href="#create">Make a pact <span aria-hidden="true">↗</span></a><button class="text-button" data-explore>Step inside <span aria-hidden="true">↓</span></button></div><div class="hero-community"><div class="avatars"><span>EA</span><span>NA</span><span>MR</span></div><span>Good people keep<br>each other honest.</span></div></div><div class="hero-display"><div class="scene-slot hero-scene" data-scene="habit" data-scene-role="hero"><img src="assets/objects/habit.png" alt="A crafted walnut habit tray with enamel day tiles" class="scene-poster"><span class="scene-light"></span></div><div class="hero-object-caption"><span class="edition">OBJECT NO. 01 / THE HABIT</span><span>One day at a time.</span></div></div><div class="hero-bottom"><span>A PRIVATE GAME ROOM FOR YOUR REAL LIFE</span><span>01 — 06 <i></i> A collection of commitments</span></div></div>
+<div class="page-wrap"><section class="attention-section" aria-labelledby="attentionHeading"><div class="section-heading"><div><p class="eyebrow">A little attention goes a long way</p><h2 id="attentionHeading">The room is waiting on you.</h2></div><a class="text-button" href="#activity">All activity ↗</a></div><div id="attentionGrid" class="attention-grid"></div></section><section class="collection-section" aria-labelledby="collectionHeading"><div class="section-heading"><div><p class="eyebrow">Something worth showing up for</p><h2 id="collectionHeading">On the table.</h2></div><a class="text-button" href="#spaces">View all pacts ↗</a></div><div class="filters" aria-label="Filter pacts"><button data-filter="All" class="active" aria-pressed="true">All pacts</button><button data-filter="Personal" aria-pressed="false">Just me</button><button data-filter="Couple" aria-pressed="false">The two of us</button><button data-filter="Group" aria-pressed="false">Good company</button></div><div id="pactGallery" class="pact-gallery"></div></section></div>
+<section class="ritual" id="ritual" aria-label="The art of keeping your word"><div class="ritual-header page-wrap"><p class="eyebrow">It's more than a checkmark</p><h2>The art of<br><em>keeping your word.</em></h2></div><div class="ritual-layout page-wrap"><div class="ritual-stage"><div class="scene-slot" data-scene="proof" data-scene-role="ritual"><img src="assets/objects/proof.png" class="scene-poster" alt="A paper proof slip with an embossed seal"></div><div class="ritual-stage-caption"><span id="ritualObjectLabel">THE PROOF</span><span>Crafted for a little accountability.</span></div></div><div class="ritual-chapters"><article data-chapter="proof"><p class="eyebrow">01 / Show up</p><h3>A promise is good.<br><em>Proof is better.</em></h3><p>A photo, a run, a night of actual sleep. Small acts become something you can hold onto.</p><a class="text-button" href="#challenge/sleep">Keep your promise ↗</a></article><article data-chapter="jar"><p class="eyebrow">02 / Make it count</p><h3>Just enough<br><em>skin in the game.</em></h3><p>Tomorrow's coffee. Sunday breakfast. A little stake makes “I'll try” feel different.</p><a class="text-button" href="#challenge/buzzword">Meet the jar ↗</a></article><article data-chapter="member"><p class="eyebrow">03 / Keep the story</p><h3>Become someone<br><em>you can bet on.</em></h3><p>The streaks, the wins, the times you surprised yourself. A record that's entirely yours.</p><a class="text-button" href="#profile">Your membership card ↗</a></article></div></div></section>
+<footer class="room-footer page-wrap"><span class="wordmark">Pact</span><p>Same friends.<br>Higher standards.</p><a class="button primary" href="#create">Start something good ↗</a><small>Made for the promises between us.</small></footer>
+</section>
+<section id="spaces" class="view" hidden aria-label="Your pacts"><div class="page-wrap"><header class="page-heading"><p class="eyebrow">Your collection of commitments</p><div><h1>Your pacts.</h1><a href="#create" class="button primary">Make a pact ↗</a></div><p>A little competition. A lot to come back for.</p></header><div class="collection-toolbar"><div id="pactTabs" class="filters" aria-label="Pact status"></div><label class="search-field"><span aria-hidden="true">⌕</span><input type="search" id="pactSearch" placeholder="Find a pact" aria-label="Search pacts"></label></div><div id="spaceGrid"></div></div></section>
+<section id="challenge" class="view" hidden aria-label="Pact detail"><div id="challengeScreen" class="page-wrap"></div></section>
+<section id="create" class="view" hidden aria-label="Create a pact"><div class="page-wrap"><header class="page-heading"><p class="eyebrow">Every good story starts somewhere</p><h1>Put your word<br><em>on the table.</em></h1></header><div class="create-layout"><form id="createForm" class="create-form"><div class="form-step"><span class="step-number">01</span><div><label for="ideaInput">What are we promising?</label><textarea id="ideaInput" rows="3" maxlength="180" required placeholder="I’ll sleep before midnight for five nights."></textarea><div class="suggestions"><button type="button" data-suggestion="Sleep before midnight for five nights">A better habit</button><button type="button" data-suggestion="Who logs the most runs this month?">A friendly race</button><button type="button" data-suggestion="Will the Friday deck ship?">Call it early</button></div></div></div><div class="form-step"><span class="step-number">02</span><div><label for="pactType">Give it a shape</label><select id="pactType"></select><p class="form-hint" id="typeHint">Describe your promise and we'll suggest an object. You have the final say.</p></div></div><div class="form-step"><span class="step-number">03</span><div><label for="pactContext">Who's in?</label><select id="pactContext"><option value="Personal">Just me</option><option value="Couple">The two of us</option><option value="Group">Good company</option></select><div id="peopleField" hidden><label for="pactPeople">Their names, separated by commas</label><input id="pactPeople" maxlength="160" placeholder="Naina, Mira"></div><div class="form-pair"><div><label for="pactStart">Start date</label><input id="pactStart" type="date" required></div><div><label for="pactDuration">Duration</label><select id="pactDuration"><option value="5">5 days</option><option value="7">One week</option><option value="14">Two weeks</option><option value="30">One month</option></select></div></div><label for="pactStake">Make it mean something</label><input id="pactStake" maxlength="80" placeholder="Coffee, breakfast, ₹100…" value="Just for fun"><div id="proofField"><label for="pactProof">How will you show up?</label><select id="pactProof"><option value="log">An honest check-in</option><option value="photo">A photo for the room to review</option></select></div></div></div><div class="create-submit"><p>You'll review the details before sealing it.</p><button type="submit" class="button primary">Review your pact ↗</button></div></form><aside class="create-preview"><div class="scene-slot" data-scene="habit" data-scene-role="create"><img class="scene-poster" src="assets/objects/habit.png" alt="Preview of the object for your new pact"></div><p class="eyebrow" id="createObjectLabel">THE HABIT</p><h2 id="createPreviewTitle">A promise taking shape.</h2><p>Something small.<br>Something worth keeping.</p></aside></div></div></section>
+<section id="activity" class="view" hidden aria-label="Activity"><div class="page-wrap narrow"><header class="page-heading"><p class="eyebrow">The people in your corner</p><h1>A little room<br><em>to catch up.</em></h1><p>Proof, progress, and the occasional friendly nudge.</p></header><div id="activityList"></div></div></section>
+<section id="profile" class="view" hidden aria-label="Your profile"><div class="page-wrap"><header class="page-heading"><p class="eyebrow">A record worth keeping</p><div><h1>Your word carries weight.</h1><a href="#settings" class="text-button">Settings ↗</a></div></header><div class="profile-layout"><div class="membership"><button class="profile-card" id="profileCard" aria-label="Turn your membership card" aria-pressed="false"><span class="profile-card-inner"><span class="profile-face profile-front"><span class="member-top"><span>Pact</span><span>THE PRIVATE GAME ROOM</span></span><span class="member-monogram">P</span><span class="member-name" id="memberName">Eeshita Anand</span><span class="member-bottom"><span id="memberStreak">12 DAY STREAK</span><span>MEMBER / 001</span></span></span><span class="profile-face profile-back"><span class="member-top"><span>Pact</span><span>YOUR WORD, IN NUMBERS</span></span><span id="backStats" class="back-stats"></span><span class="member-bottom"><span>SMALL PROMISES. BETTER COMPANY.</span></span></span></span></button><p class="card-flip-hint">A little history on the other side. <span aria-hidden="true">↻</span></p><div class="profile-tools"><button class="button" id="customizeCard">Customize card</button><button class="button" id="downloadCard">Download card ↓</button></div><div id="statEditor" hidden></div></div><div class="profile-about"><p class="eyebrow">This is what showing up looks like</p><h2 id="profileGreeting">Good on you,<br><em>Eeshita.</em></h2><p id="profileBio">Small promises. Better company.</p><div id="profileNumbers" class="profile-numbers"></div></div></div><section class="achievement-section"><div class="section-heading"><div><p class="eyebrow">Earned, never given</p><h2>The keepsakes.</h2></div></div><div id="achievementRow" class="achievement-row"></div></section></div></section>
+<section id="settings" class="view" hidden aria-label="Settings"><div class="page-wrap narrow"><a href="#profile" class="back-link">← Your card</a><header class="page-heading"><p class="eyebrow">Make yourself at home</p><h1>The little details.</h1></header><form id="settingsForm"><section class="settings-panel"><h2>Your profile</h2><img id="settingsPhotoPreview" class="settings-photo-preview" alt="Your profile photo" hidden><label for="profileUpload">Profile photo</label><input id="profileUpload" type="file" accept="image/png,image/jpeg,image/webp"><label for="settingsName">Name</label><input id="settingsName" required maxlength="60"><label for="settingsBio">A few words about you</label><input id="settingsBio" maxlength="140"><label for="settingsEmail">Email</label><input type="email" id="settingsEmail" maxlength="160"><button class="button primary" type="submit">Save details ↗</button></section></form><section class="settings-panel"><h2>Your room, your pace.</h2><label class="toggle-row"><span><strong>Object motion</strong><small>Camera movement and small celebrations.</small></span><input id="motionSetting" type="checkbox" role="switch"></label><p class="form-hint">Your device's reduced-motion preference always takes priority.</p><label class="toggle-row"><span><strong>Highlight reminders</strong><small>Keep pending actions visible in your room.</small></span><input id="reminderSetting" type="checkbox" role="switch"></label></section><section class="settings-panel"><h2>Yours to keep.</h2><p>Your pacts and profile are saved on this device. Stakes are a record between friends; Pact doesn't move money.</p><button class="button" id="exportData">Download your records ↓</button></section></div></section>
+</main>
+<nav class="mobile-nav" aria-label="Mobile navigation"><a href="#home" data-nav="home"><span aria-hidden="true">⌂</span>Room</a><a href="#spaces" data-nav="spaces"><span aria-hidden="true">◇</span>Pacts</a><a class="mobile-create" href="#create" aria-label="Make a pact"><span aria-hidden="true">＋</span></a><a href="#activity" data-nav="activity"><span aria-hidden="true">◷</span>Activity</a><a href="#profile" data-nav="profile"><span aria-hidden="true">◎</span>Your card</a></nav>
+<dialog id="pactDialog" aria-labelledby="dialogTitle"><div class="dialog-top"><span class="eyebrow">A LITTLE ACCOUNTABILITY</span><button class="icon-button" id="closeDialog" aria-label="Close dialog">×</button></div><div id="dialogBody"></div></dialog><div id="toast" role="status" aria-live="polite"></div><noscript><p class="noscript-message">Pact needs JavaScript for your pacts and check-ins. Enable it to step inside.</p></noscript>
+<script defer src="motion.js?v=20260910-fluid-2"></script>
+</body></html>
