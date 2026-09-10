@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pact</title>
+    <meta name="description" content="A private game room for predictions, promises and friendly accountability." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@700;800;900;1000&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=three-dimensional-scroll-v2" />
+  </head>
+  <body>
+    <div class="depth-stage" aria-hidden="true">
+      <canvas id="pact3d"></canvas>
+      <div class="depth-stage-glow"></div>
+    </div>
+    <div class="shell">
+      <nav class="topbar" aria-label="Primary">
+        <button class="wordmark active" data-view="home">Feed</button>
+        <div class="top-actions">
+          <button data-view="spaces">Bets</button>
+          <button data-view="activity">Chat</button>
+          <button data-view="profile">Me</button>
+        </div>
+      </nav>
+
+      <main>
+        <section class="view active" id="home">
+          <header class="home-intro">
+            <p class="kicker">Pact</p>
+            <h1>Bet on better habits.</h1>
+            <p>
+              Make a prediction, promise something, invite the people involved, and let Pact turn it into a small interactive object.
+            </p>
+            <button class="compose-trigger" data-view="create">What are we betting on?</button>
+          </header>
+
+          <section class="spotlight">
+            <div class="spotlight-copy">
+              <p class="kicker">Needs you</p>
+              <h2 id="spotlightTitle">Verify Naina's proof</h2>
+              <p id="spotlightText">She checked in for the sleep pact. Decide whether the photo is enough before it rolls into the weekly recap.</p>
+            </div>
+            <div class="spotlight-card proof-polaroid" id="spotlightObject">
+              <span>11:42 PM</span>
+              <strong>Lights out</strong>
+              <em>Pending stamp</em>
+            </div>
+            <div class="spotlight-actions">
+              <button data-spotlight="approve">Approve</button>
+              <button data-spotlight="more">Ask for more</button>
+            </div>
+          </section>
+
+          <section class="gallery-head">
+            <div>
+              <p class="kicker">Happening now</p>
+              <h2>Active bets</h2>
+            </div>
+            <div class="filters" aria-label="Filter pacts">
+              <button class="active" data-filter="All">All</button>
+              <button data-filter="Personal">Personal</button>
+              <button data-filter="Couple">Couple</button>
+              <button data-filter="Group">Group</button>
+            </div>
+          </section>
+
+          <section class="pact-gallery" id="pactGallery"></section>
+
+          <section class="pulse">
+            <div class="pulse-header">
+              <p class="kicker">Room pulse</p>
+              <button data-view="activity">View all</button>
+            </div>
+            <div id="pulseList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="spaces">
+          <header class="bets-page-head">
+            <h1>Bets</h1>
+            <button class="bets-search" type="button" aria-label="Search bets"></button>
+          </header>
+          <div class="space-grid" id="spaceGrid"></div>
+        </section>
+
+        <section class="view challenge-view" id="challenge">
+          <header class="settings-page-top challenge-page-top">
+            <button class="settings-page-back" type="button" data-challenge-return aria-label="Back">←</button>
+            <h1>Challenge</h1>
+          </header>
+          <div id="challengeScreen"></div>
+        </section>
+
+        <section class="view" id="create">
+          <header class="page-head">
+            <p class="kicker">New Pact</p>
+            <h1>Start with the sentence.</h1>
+            <p>Pact recommends the object after you describe what should happen.</p>
+          </header>
+          <section class="create-panel">
+            <div class="compose-box">
+              <label for="ideaInput">What are we betting on?</label>
+              <textarea id="ideaInput">Can I stay off food delivery this week?</textarea>
+              <div class="suggestions">
+                <button data-suggestion="Will everyone submit the deck before Friday?">Prediction</button>
+                <button data-suggestion="Can I stay off food delivery this week?">Habit</button>
+                <button data-suggestion="Who logs the most runs this month?">Race</button>
+                <button data-suggestion="Rs 50 when someone says circle back">Jar</button>
+              </div>
+            </div>
+            <div class="recommendation">
+              <p class="kicker">Recommended object</p>
+              <h2 id="recommendTitle">Habit calendar</h2>
+              <p id="recommendText">Daily tiles with honor check-ins, optional proof and a visible streak.</p>
+              <div id="recommendPreview"></div>
+            </div>
+            <div class="create-options">
+              <button class="active" data-context="Personal">Personal</button>
+              <button data-context="Couple">Couple</button>
+              <button data-context="Group">Group</button>
+            </div>
+            <div class="create-date-settings" aria-label="Bet dates">
+              <label for="betStartInput">Starts <input id="betStartInput" type="date" /></label>
+              <label for="betDurationInput">Length
+                <select id="betDurationInput">
+                  <option value="5">5 days</option>
+                  <option value="7">Week</option>
+                  <option value="14">2 weeks</option>
+                  <option value="30">Month</option>
+                </select>
+              </label>
+            </div>
+            <div class="create-date-settings" aria-label="Proof setting">
+              <label for="betProofModeInput">Check-in
+                <select id="betProofModeInput">
+                  <option value="log">Normal log</option>
+                  <option value="proof">Photo proof</option>
+                </select>
+              </label>
+            </div>
+            <div class="publish-row">
+              <span>Calendar: proof or log</span>
+              <span>Consequence: just for fun</span>
+              <button id="publishPact">Create pact</button>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="activity">
+          <header class="page-head">
+            <p class="kicker">Chat</p>
+            <h1>Pending and recent.</h1>
+          </header>
+          <div class="activity-list" id="activityList"></div>
+        </section>
+
+        <section class="view" id="profile">
+          <header class="profile-top">
+            <h1>Profile</h1>
+            <button class="settings-button" aria-label="Settings">⚙</button>
+          </header>
+          <header class="profile-card" id="profileCard" tabindex="0" aria-label="Flip profile card">
+            <div class="profile-card-inner">
+              <div class="profile-face profile-front">
+                <div class="profile-shape shape-one"></div>
+                <div class="profile-shape shape-two"></div>
+                <div class="big-avatar">
+                  <img src="" alt="" />
+                  <span>EA</span>
+                </div>
+                <h2>Eeshita Anand</h2>
+                <p class="profile-streak"><span aria-hidden="true">🔥</span> 12 day streak</p>
+              </div>
+              <div class="profile-face profile-back">
+                <div class="back-share-card" id="shareCard">
+                  <div class="profile-shape shape-one"></div>
+                  <div class="profile-shape shape-two"></div>
+                  <h2>Eeshita Anand</h2>
+                  <div class="back-stats" id="backStats"></div>
+                  <small>Pact</small>
+                </div>
+                <div class="card-tools" aria-label="Profile card actions">
+                  <button id="customizeCard" type="button">Customize</button>
+                  <button id="downloadCard" type="button">Download</button>
+                </div>
+              </div>
+            </div>
+          </header>
+          <p class="stats-title">Personal stats</p>
+          <div class="stat-grid personal-stat-grid">
+            <article><span>Bets won</span><strong class="blue">42</strong></article>
+            <article><span>Bets lost</span><strong class="red">14</strong></article>
+            <article><span>Best streak</span><strong class="black">18d</strong></article>
+            <article><span>Accuracy</span><strong class="yellow">75%</strong></article>
+          </div>
+
+          <section class="achievements-section" aria-label="Achievements">
+            <div class="section-row">
+              <p class="stats-title">Achievements</p>
+              <button type="button">All</button>
+            </div>
+            <div class="achievement-row" id="achievementRow"></div>
+          </section>
+        </section>
+
+        <section class="view settings-view" id="settings">
+          <header class="settings-page-top">
+            <button class="settings-page-back" type="button" data-settings-return aria-label="Back">←</button>
+            <h1>Settings</h1>
+          </header>
+          <div id="settingsScreen"></div>
+        </section>
+      </main>
+
+      <nav class="mobile-nav" aria-label="Primary">
+        <button class="active" data-view="home"><span class="nav-icon grid-icon"></span>Feed</button>
+        <button data-view="spaces"><span class="nav-icon star-icon"></span>Bets</button>
+        <button class="new-button" data-view="create">Create</button>
+        <button data-view="activity"><span class="nav-icon chat-icon"></span>Chat</button>
+        <button data-view="profile"><span class="nav-icon user-icon"></span>Me</button>
+      </nav>
+    </div>
+
+    <div class="drawer" id="drawer" aria-hidden="true">
+      <article class="drawer-card" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+        <button class="close" id="closeDrawer" aria-label="Close">Close</button>
+        <div id="drawerObject"></div>
+        <div class="drawer-copy" id="drawerCopy"></div>
+      </article>
+    </div>
+
+    <div class="stat-sheet" id="statSheet" aria-hidden="true">
+      <div class="stat-sheet-panel" role="dialog" aria-label="Choose stat or achievement">
+        <div class="sheet-handle"></div>
+        <div class="stat-options" id="statOptions"></div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+    <script src="assets/three.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
